@@ -1,0 +1,50 @@
+系统信息监控
+
+部署方案:
+    放在/data目录下
+    tar -xzvf watch_system.tar.gz
+    cd system_log
+    ./get_system_tool.sh 1
+
+回滚方案:
+    ./get_system_tool.sh 2
+
+重启方案:
+    ./get_system_tool.sh 1
+
+目前支持的内容:
+    a. top -n 1 -b|head -15|tail -8
+    b. ps -aux |sort -rn -k +4 |head -5
+    c. mpstat -P ALL
+    d. iostat -x 1 2                  // 表示2s内的差值
+    e. sar -n DEV 1 2
+    f. perf record
+
+perf文件查看:
+    perf report filename
+    注意: 1.尽量不要在线上环境查看perf文件，可以下载到非现网服务查看
+          2.若文件打不开请将文件名改成perf.data
+          3.若文件打开报错,可以使用sudo perf report -D -i filename 查看内容
+
+
+注意:
+   1. 定时器每分钟调用一次
+   2. 除f之外的命令是10s中执行一次,日志文件保存7天; f 的执行时长按照上一次log文件的生成大小计算获得0~40s之间,每2分钟触发一次,日志文件保存2小时
+   3. 日志生成地址：/data/system_log/log 以system_log为前
+   4. 在system_info_commond.conf中加入新简单命令的时候，最下面需要空一行，否则最后一行的命令不能执行
+
+
+ChangeLog:
+ 1. 版本1_0_2
+     增加perf
+ 2. 版本1_0_3
+     1.兼容crontab的问题; 旧版本crontbal中，修改主文件会导致自定义文件被覆盖,一些用户定时任务被丢失
+     2.优化文件数据格式
+ 3. 版本1_0_4
+     优化 perf 命令导致的内核产生大量/tmp/perf-vdso.so* 问题
+ 4. 版本1_0_5
+     1.get_system_tool.sh 去掉 crontab 自动重建功能, 修复crontab源文件被覆盖的问题
+     2.增加 crontab 原文件的记录
+ 5. 版本1_0_6
+     1.修复rpm -qa | grep perf |grep -v "gperf" |sum |awk '{print $2}'导致资源消耗问题
+     2.perf 增加cycles,faults监控
